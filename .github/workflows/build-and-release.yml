@@ -9,7 +9,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest]
+        os: [windows-latest, ubuntu-latest, ubuntu-22.04-arm]
 
     steps:
       - uses: actions/checkout@v4
@@ -46,7 +46,7 @@ jobs:
           fi
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@main
         with:
           name: ${{ matrix.os }}-dist
           path: dist
@@ -63,21 +63,18 @@ jobs:
           event-type: Sync
           
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@main
         with:
-          pattern: "*-dist"
-          path: releases
-          merge-multiple: true
+          path: ./Steamauto
 
       - name: Finalization
         run: |
           sudo timedatectl set-timezone "Asia/Shanghai"
           echo "DATE=$(date +"%Y%m%d-%H%M")" >> $GITHUB_ENV
-          test -n "$(find releases -maxdepth 1 -type f -print -quit)" || {
-            echo "No release files were downloaded into releases/"
-            exit 1
-          }
-          ls -lah releases
+          mkdir releases
+          mv Steamauto/windows-latest-dist/* releases/
+          mv Steamauto/ubuntu-latest-dist/* releases/
+          mv Steamauto/ubuntu-22.04-arm-dist/* releases/
 
       - name: Upload to Github Releases
         uses: ncipollo/release-action@main
