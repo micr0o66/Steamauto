@@ -28,28 +28,63 @@ except Exception as e:
 def send_notification(steam_client, message, title=""):
     steam_64_id = "未登录"
     steam_username = "暂未登录"
+
     if steam_client:
         try:
             steam_64_id = steam_client.get_steam64id_from_cookies()
         except:
             pass
         steam_username = steam_client.username
-    if config.get("notifiers", False):
-        for black in config.get("blacklist_words", []):
-            if black in message or black in title:
-                logger.debug(f"消息中包含黑名单词: {black}，已被过滤")
-                return
+
+    if not config.get("notifiers"):
+        return
+
+    # 黑名单过滤
+    for black in config.get("blacklist_words", []):
+        if black in message or black in title:
+            logger.debug(f"消息中包含黑名单词: {black}，已被过滤")
+            return
+
+    proxy = config.get("proxy", "").strip()
+
+    # 备份旧环境变量
+    old_http_proxy = os.environ.get("HTTP_PROXY")
+    old_https_proxy = os.environ.get("HTTPS_PROXY")
+
+    try:
+        # 如果 proxy 非空才启用
+        if proxy:
+            os.environ["HTTP_PROXY"] = proxy
+            os.environ["HTTPS_PROXY"] = proxy
+
         for notifier in config.get("notifiers", []):
             try:
-                title = title if title else "Steamauto 通知"
+                send_title = title if title else "Steamauto 通知"
+                send_message = message
+
                 if config.get("custom_title"):
-                    message = f"{title}\n{message}"
-                    title = config.get("custom_title")
+                    send_message = f"{send_title}\n{send_message}"
+                    send_title = config.get("custom_title")
+
                 if config.get("include_steam_info", False):
-                    message += f"\nSteam 用户名：{steam_username}\nSteam ID：{steam_64_id}"
+                    send_message += f"\nSteam 用户名：{steam_username}\nSteam ID：{steam_64_id}"
+
                 apobj = apprise.Apprise()
                 apobj.add(notifier)
-                apobj.notify(title=title, body=message)  # type: ignore
+                apobj.notify(title=send_title, body=send_message)
+
             except Exception as e:
                 handle_caught_exception(e)
                 logger.error(f"发送通知失败: {str(e)}")
+
+    finally:
+        # 恢复环境变量，避免影响其他代码
+        if old_http_proxy is None:
+            os.environ.pop("HTTP_PROXY", None)
+        else:
+            os.environ["HTTP_PROXY"] = old_http_proxy
+
+        if old_https_proxy is None:
+            os.environ.pop("HTTPS_PROXY", None)
+        else:
+            os.environ["HTTPS_PROXY"] = old_https_proxy
