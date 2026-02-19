@@ -18,7 +18,7 @@ UU_TOKEN_FILE_PATH = os.path.join(CONFIG_FOLDER, "uu_token_{steam_username}.txt"
 STEAM_ACCOUNT_INFO_FILE_PATH = os.path.join(CONFIG_FOLDER, "steam_account_info.json5")
 SESSION_FOLDER = "session"
 os.makedirs(SESSION_FOLDER, exist_ok=True)
-SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}, {"game": "dota2", "app_id": 570}]
+SUPPORT_GAME_TYPES = [{"game": "csgo", "app_id": 730}]
 ECOSTEAM_RSAKEY_FILE = os.path.join(CONFIG_FOLDER, "rsakey.txt")
 BUILD_INFO = info
 if BUILD_INFO == "正在使用源码运行":
